@@ -1,134 +1,1346 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>荷物追跡</title>
-  <style>
-    body { font-family: sans-serif; background: #fff; color: #111; margin: 0; padding: 0; }
-    *, *::before, *::after { box-sizing: border-box; }
-    input, select, button { font-family: inherit; font-size: 14px; padding: 8px 12px; border-radius: 8px; border: 0.5px solid #ccc; outline: none; }
-    input:focus, select:focus { border-color: #888; }
-    .wrap { max-width: 520px; margin: 2rem auto; padding: 0 1rem; }
-    h2 { font-size: 20px; font-weight: 500; margin: 0 0 0.25rem; }
-    .sub { font-size: 14px; color: #666; margin: 0 0 1.25rem; }
-    label { font-size: 13px; color: #666; display: block; margin-bottom: 5px; }
-    select { width: 100%; margin-bottom: 1rem; background: #fff; }
-    .badge { display: flex; align-items: center; gap: 10px; background: #f5f5f5; border-radius: 8px; padding: 9px 14px; margin-bottom: 1rem; }
-    .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .badge-name { font-size: 14px; font-weight: 500; }
-    .badge-hint { font-size: 12px; color: #999; margin-left: auto; }
-    .input-row { display: flex; gap: 8px; margin-bottom: 0.75rem; }
-    .input-row input { flex: 1; }
-    .btn { color: #fff; border: none; border-radius: 8px; padding: 0 18px; height: 38px; font-size: 14px; font-weight: 500; cursor: pointer; transition: opacity 0.15s; white-space: nowrap; }
-    .btn:hover { opacity: 0.82; }
-    .result { display: none; margin-top: 1rem; background: #f5f5f5; border-radius: 12px; padding: 1rem 1.25rem; }
-    .result.show { display: block; }
-    .rlabel { font-size: 12px; color: #666; margin-bottom: 4px; }
-    .rno { font-size: 15px; font-weight: 500; margin-bottom: 10px; }
-    .rlink { display: block; color: #fff; text-align: center; padding: 9px; border-radius: 8px; font-size: 14px; font-weight: 500; text-decoration: none; }
-    .rlink:hover { opacity: 0.82; }
-    .rnote { font-size: 12px; color: #999; margin-top: 7px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>発注・配送メモ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  :root {
+    --bg:        #f5f0e8;
+    --surface:   #fdfaf4;
+    --surface2:  #f0ebe0;
+    --surface3:  #ede7d9;
+    --border:       #ddd5c4;
+    --border-light: #ccc3b0;
+    --text:       #2d2620;
+    --text-muted: #7d7060;
+    --text-dim:   #b0a898;
+    --input-bg:      #e8e4de;
+    --input-border:  #c8c0b4;
+    --input-focus-border: #8b6f4e;
+    --input-focus-glow: rgba(139,111,78,0.15);
+    --accent:     #8b6f4e;
+    --accent-dark:#6d5339;
+    --accent-glow:rgba(139,111,78,0.14);
+    --green:    #2d7a4f;
+    --green-bg: rgba(45,122,79,0.10);
+    --orange:   #c06a1a;
+    --orange-bg:rgba(192,106,26,0.10);
+    --gray:     #7a7068;
+    --gray-bg:  rgba(122,112,104,0.10);
+    --red:      #b94040;
+    --red-bg:   rgba(185,64,64,0.10);
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 2px 16px rgba(100,80,50,0.10), 0 1px 4px rgba(100,80,50,0.08);
+    --font: 'Noto Sans JP', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px;
+    padding-top: 86px;
+    line-height: 1.6;
+  }
+
+  /* ══ ヘッダー ══ */
+  .header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 2px 12px rgba(100,80,50,0.08);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 20px;
+    flex-wrap: wrap;
+  }
+  .header-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--accent), #c09060);
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 2px 10px var(--accent-glow);
+    flex-shrink: 0;
+  }
+  .header-title h1 { font-size: 17px; font-weight: 700; color: var(--text); line-height: 1.2; }
+  .header-title small { font-size: 11px; color: var(--text-muted); }
+
+  .header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .header-count {
+    font-family: var(--mono); font-size: 12px; color: var(--text-muted);
+    background: var(--surface2); padding: 4px 12px;
+    border-radius: 20px; border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  /* ── ユーザー名 ── */
+  .user-display {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; font-weight: 700; color: var(--text);
+    cursor: pointer; padding: 5px 12px;
+    border-radius: 20px; border: 1px solid var(--border);
+    background: var(--surface2);
+    transition: border-color 0.2s, background 0.2s;
+    white-space: nowrap;
+  }
+  .user-display:hover { border-color: var(--border-light); background: var(--surface3); }
+  .user-display .edit-icon { font-size: 11px; color: var(--text-muted); }
+
+  .user-edit-wrap { display: none; align-items: center; gap: 6px; }
+  .user-edit-wrap.open { display: flex; }
+
+  .user-input {
+    background: var(--input-bg); border: 1px solid var(--input-border);
+    border-radius: var(--radius-sm); color: var(--text);
+    font-family: var(--font); font-size: 13px;
+    padding: 5px 10px; outline: none; width: 130px;
+    transition: border-color 0.2s;
+  }
+  .user-input:focus { border-color: var(--input-focus-border); }
+
+  .btn-sm {
+    background: var(--accent); color: #fff; border: none;
+    border-radius: var(--radius-sm); font-family: var(--font);
+    font-size: 12px; font-weight: 700; padding: 5px 12px;
+    cursor: pointer; white-space: nowrap; transition: opacity 0.2s;
+  }
+  .btn-sm:hover { opacity: 0.85; }
+  .btn-sm-ghost {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text-muted); border-radius: var(--radius-sm);
+    font-size: 12px; padding: 4px 8px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-sm-ghost:hover { color: var(--red); border-color: var(--red); background: var(--red-bg); }
+
+  /* ══ メインレイアウト：入力 + メーカー管理 ══ */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 270px;
+    gap: 16px;
+    margin-bottom: 18px;
+    align-items: start;
+  }
+  @media (max-width: 840px) { .main-grid { grid-template-columns: 1fr; } }
+
+  /* ══ パネル共通 ══ */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+  }
+  .panel-title {
+    font-size: 10px; font-weight: 700; color: var(--text-muted);
+    letter-spacing: 1px; text-transform: uppercase;
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .panel-title::after { content:''; flex:1; height:1px; background: var(--border); }
+
+  /* ── フォームグリッド ── */
+  .input-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label {
+    font-size: 10px; font-weight: 700; color: var(--text-muted);
+    letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .field input,
+  .field select {
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius-sm);
+    color: var(--text); font-family: var(--font); font-size: 14px;
+    padding: 8px 10px;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    outline: none; width: 100%;
+    -webkit-appearance: none; appearance: none;
+  }
+  .field input[type="date"] { font-family: var(--mono); font-size: 13px; }
+  .field select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%237d7060' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px;
+  }
+  .field input:focus, .field select:focus {
+    border-color: var(--input-focus-border);
+    box-shadow: 0 0 0 3px var(--input-focus-glow);
+    background: #e2ddd6;
+  }
+  .field input::placeholder { color: var(--text-dim); }
+
+  /* ステータス */
+  .status-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .status-radio { display: none; }
+  .status-label {
+    padding: 6px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 700; cursor: pointer;
+    border: 1.5px solid var(--border); color: var(--text-muted);
+    transition: all 0.18s; user-select: none;
+  }
+  .status-radio:checked + .status-label[data-s="未発送"] { background: var(--gray-bg);   color: var(--gray);   border-color: var(--gray); }
+  .status-radio:checked + .status-label[data-s="発送済"] { background: var(--orange-bg); color: var(--orange); border-color: var(--orange); }
+  .status-radio:checked + .status-label[data-s="到着"]   { background: var(--green-bg);  color: var(--green);  border-color: var(--green); }
+  .status-label:hover { border-color: var(--border-light); color: var(--text); }
+
+  /* 保存ボタン */
+  .btn-save {
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    color: #fff; border: none; border-radius: var(--radius-sm);
+    font-family: var(--font); font-size: 14px; font-weight: 700;
+    padding: 9px 24px; cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 2px 10px var(--accent-glow);
+  }
+  .btn-save:hover { opacity: 0.88; }
+  .btn-save:active { transform: scale(0.97); }
+  .input-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+  /* ══ メーカー管理：トグル ══ */
+  .maker-toggle-btn {
+    width: 100%; background: none; border: none;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 10px; font-weight: 700; color: var(--text-muted);
+    letter-spacing: 1px; text-transform: uppercase;
+    cursor: pointer; padding: 0; margin-bottom: 0;
+    font-family: var(--font); text-align: left;
+  }
+  .maker-toggle-btn::after { content:''; flex:1; height:1px; background: var(--border); }
+  .maker-toggle-chevron {
+    font-size: 9px; color: var(--text-muted);
+    transition: transform 0.25s; flex-shrink: 0;
+    order: -1;
+  }
+  .maker-toggle-btn.open .maker-toggle-chevron { transform: rotate(180deg); }
+
+  .maker-body {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.3s ease, opacity 0.22s ease, margin-top 0.25s ease;
+    margin-top: 0;
+  }
+  .maker-body.open {
+    max-height: 400px;
+    opacity: 1;
+    margin-top: 14px;
+  }
+
+  /* ══ メーカーリスト ══ */
+  .maker-list {
+    display: flex; flex-direction: column; gap: 4px;
+    max-height: 250px; overflow-y: auto;
+    margin-bottom: 11px; padding-right: 2px;
+  }
+  .maker-list::-webkit-scrollbar { width: 4px; }
+  .maker-list::-webkit-scrollbar-track { background: var(--surface2); border-radius: 2px; }
+  .maker-list::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 2px; }
+
+  .maker-item {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 6px 10px;
+    font-size: 13px; transition: background 0.15s;
+    gap: 6px;
+  }
+  .maker-item:hover { background: var(--surface3); }
+  .maker-item span { flex:1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+  .carrier-id-badge {
+    flex: 0 0 auto !important;
+    font-size: 10px; font-family: var(--mono);
+    color: var(--text-dim); background: var(--surface3);
+    border: 1px solid var(--border); border-radius: 4px;
+    padding: 1px 5px; white-space: nowrap;
+  }
+  .btn-maker-del {
+    background: none; border: none; color: var(--text-dim);
+    cursor: pointer; font-size: 13px; padding: 0 2px;
+    line-height: 1; transition: color 0.15s; flex-shrink: 0;
+  }
+  .btn-maker-del:hover { color: var(--red); }
+
+  .maker-add-row { display: flex; gap: 6px; }
+  .maker-add-input {
+    flex: 1; min-width: 0;
+    background: var(--input-bg); border: 1px solid var(--input-border);
+    border-radius: var(--radius-sm); color: var(--text);
+    font-family: var(--font); font-size: 13px;
+    padding: 7px 10px; outline: none; transition: border-color 0.2s;
+  }
+  .maker-add-input:focus { border-color: var(--input-focus-border); }
+  .maker-add-input::placeholder { color: var(--text-dim); }
+  .btn-maker-add {
+    background: var(--accent); color: #fff; border: none;
+    border-radius: var(--radius-sm); font-family: var(--font);
+    font-size: 13px; font-weight: 700; padding: 7px 14px;
+    cursor: pointer; white-space: nowrap; transition: opacity 0.2s;
+  }
+  .btn-maker-add:hover { opacity: 0.85; }
+
+  /* ══ フィルタバー ══ */
+  .filter-bar {
+    display: flex; gap: 8px; margin-bottom: 14px;
+    flex-wrap: wrap; align-items: center;
+  }
+  .search-wrap { flex: 1; min-width: 180px; position: relative; }
+  .search-wrap svg {
+    position: absolute; left: 10px; top: 50%;
+    transform: translateY(-50%); color: var(--text-muted); pointer-events: none;
+  }
+  .search-input {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text);
+    font-family: var(--font); font-size: 13px;
+    padding: 8px 12px 8px 32px;
+    width: 100%; outline: none; transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--input-focus-border); }
+  .search-input::placeholder { color: var(--text-dim); }
+
+  .filter-btn {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text-muted); border-radius: 20px;
+    font-family: var(--font); font-size: 12px; font-weight: 600;
+    padding: 6px 14px; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+  .filter-btn:hover { color: var(--text); border-color: var(--border-light); }
+  .filter-btn.active        { color: var(--accent);  border-color: var(--accent);  background: var(--accent-glow); }
+  .filter-btn.active-orange { color: var(--orange);  border-color: var(--orange);  background: var(--orange-bg); }
+  .filter-btn.active-green  { color: var(--green);   border-color: var(--green);   background: var(--green-bg); }
+
+  /* ══ テーブル ══ */
+  .table-wrap {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+  }
+  .table-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 1200px; table-layout: fixed; }
+  thead th {
+    background: var(--surface2); padding: 10px 12px;
+    font-size: 10px; font-weight: 700; color: var(--text-muted);
+    letter-spacing: 0.8px; text-transform: uppercase;
+    text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  th:nth-child(1) { width:  88px; }  /* 発注日 */
+  th:nth-child(2) { width: 100px; }  /* メーカー */
+  th:nth-child(3) { min-width: 120px; } /* 商品名 */
+  th:nth-child(4) { width:  52px; }  /* 数量 */
+  th:nth-child(5) { width:  88px; }  /* メーカー発送日 */
+  th:nth-child(6) { width: 140px; }  /* 送り状番号 */
+  th:nth-child(7) { width: 100px; }  /* 配送会社 */
+  th:nth-child(8) { width:  76px; }  /* 状態 */
+  th:nth-child(9) { min-width: 120px; } /* 備考 */
+  th:nth-child(10){ width: 170px; text-align: center; } /* 操作（幅を少し広げた） */
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s, opacity 0.3s, transform 0.3s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  tbody tr.fadeout { opacity: 0; transform: translateX(30px); }
+  tbody tr.arrived-row { background: #e8f5ee !important; }
+  tbody tr.arrived-row:hover { background: #ddf0e6 !important; }
+  tbody tr.warning-row td:first-child { position: relative; }
+  tbody tr.editing-row { background: rgba(139,111,78,0.07) !important; outline: 2px solid var(--accent); outline-offset: -2px; }
+  tbody tr:hover { background: var(--surface2); }
+
+  .tracking-text { cursor: text; }
+
+  td {
+    padding: 11px 12px; font-size: 13px;
+    vertical-align: middle; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+  }
+  .td-date    { font-family: var(--mono); font-size: 11px; color: var(--text-muted); }
+  .td-maker   { font-size: 12px; font-weight: 600; color: var(--text); }
+  .td-item    { font-weight: 500; color: var(--text); }
+  .td-arrival { font-family: var(--mono); font-size: 11px; color: var(--text-muted); }
+  .td-arrival.undecided { color: var(--text-dim); font-style: italic; }
+  .td-carrier { font-size: 11px; color: var(--text-muted); }
+
+  /* 警告バッジ（発送から2日超過） */
+  .warn-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    background: rgba(185,64,64,0.12); color: var(--red);
+    border: 1px solid rgba(185,64,64,0.3);
+    border-radius: 20px; font-size: 10px; font-weight: 700;
+    padding: 2px 7px; white-space: nowrap; margin-left: 5px;
+    vertical-align: middle;
+  }
+
+  /* 送り状番号表示 */
+  .tracking-num {
+    font-family: var(--mono); font-size: 11px; color: var(--text);
+    display: inline-flex; align-items: center;
+    padding: 2px 6px;
+    background: var(--input-bg); border-radius: 4px;
+    border: 1px solid var(--input-border);
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+    cursor: default; user-select: text;
+  }
+  .tracking-empty { color: var(--text-dim); font-size: 12px; }
+
+  /* バッジ */
+  .badge {
+    display: inline-block; padding: 3px 9px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; white-space: nowrap;
+  }
+  .badge-未発送 { background: var(--gray-bg);   color: var(--gray);   border: 1px solid rgba(122,112,104,0.3); }
+  .badge-発送済 { background: var(--orange-bg); color: var(--orange); border: 1px solid rgba(192,106,26,0.3); }
+  .badge-到着   { background: var(--green-bg);  color: var(--green);  border: 1px solid rgba(45,122,79,0.3); }
+
+  /* 操作セル */
+  .ops-cell { text-align: center; white-space: nowrap; }
+  .ops-inner { display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; justify-content: center; }
+
+  .btn-track {
+    background: var(--accent-glow); border: 1px solid var(--accent);
+    color: var(--accent); border-radius: var(--radius-sm);
+    font-size: 11px; font-family: var(--font); font-weight: 700;
+    padding: 5px 9px; cursor: pointer;
+    transition: all 0.15s; display: inline-flex; align-items: center; gap: 4px;
+    white-space: nowrap;
+  }
+  .btn-track:hover {
+    background: var(--accent); color: #fff;
+    border-color: var(--accent-dark); box-shadow: 0 2px 8px var(--accent-glow);
+  }
+  .btn-track:active { transform: scale(0.96); }
+
+  .btn-status {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text-muted); border-radius: var(--radius-sm);
+    font-size: 11px; font-family: var(--font);
+    padding: 5px 8px; cursor: pointer;
+    transition: all 0.15s; display: inline-flex; align-items: center; gap: 4px;
+  }
+  .btn-status:hover { background: var(--accent-glow); color: var(--accent); border-color: var(--accent); }
+
+  .btn-del {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text-muted); border-radius: var(--radius-sm);
+    font-size: 11px; font-family: var(--font);
+    padding: 5px 8px; cursor: pointer;
+    transition: all 0.15s; display: inline-flex; align-items: center; gap: 4px;
+  }
+  .btn-del:hover { background: var(--red-bg); color: var(--red); border-color: var(--red); }
+
+  /* 備考インライン編集 */
+  .memo-cell {
+    position: relative;
+  }
+  .memo-text {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: text;
+    padding: 3px 5px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    min-height: 24px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .memo-text:hover {
+    border-color: var(--input-border);
+    background: var(--input-bg);
+  }
+  .memo-text:empty::before {
+    content: "—";
+    color: var(--text-dim);
+  }
+  .memo-input {
+    display: none;
+    width: 100%;
+    background: var(--input-bg);
+    border: 1px solid var(--input-focus-border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 12px;
+    padding: 3px 5px;
+    outline: none;
+    box-shadow: 0 0 0 2px var(--input-focus-glow);
+  }
+  .memo-input.active { display: block; }
+
+  /* 空状態 */
+  .empty-state { text-align: center; padding: 50px 20px; color: var(--text-muted); }
+  .empty-state .icon { font-size: 36px; margin-bottom: 10px; opacity: 0.4; }
+  .empty-state p { font-size: 14px; }
+
+  /* トースト */
+  .copy-toast {
+    position: fixed; bottom: 22px; right: 22px;
+    background: var(--surface); border: 1px solid var(--border-light);
+    color: var(--text); font-size: 13px; padding: 10px 18px;
+    border-radius: var(--radius-sm); box-shadow: var(--shadow);
+    z-index: 999; opacity: 0; transform: translateY(10px);
+    transition: opacity 0.25s, transform 0.25s; pointer-events: none;
+  }
+  .copy-toast.show { opacity: 1; transform: translateY(0); }
+</style>
 </head>
 <body>
-<div class="wrap">
-  <h2>荷物追跡</h2>
-  <div class="sub">運送会社を選んで追跡番号を入力</div>
 
-  <label>運送会社</label>
-  <select id="carrier" onchange="onChange()">
-    <option value="sagawa">佐川急便</option>
-    <option value="yamato">ヤマト運輸</option>
-    <option value="yupack">日本郵便</option>
-    <option value="seino">西濃運輸</option>
-    <option value="fukutsu">福山通運</option>
-    <option value="jplogistics">JPロジスティクス</option>
-    <option value="kinbutsurex">近物レックス</option>
-    <option value="tonami">トナミ運輸</option>
-    <option value="daiichi">第一貨物</option>
-    <option value="meitetsuunyu">名鉄運輸</option>
-    <option value="sline">エスライン</option>
-    <option value="seino_sx">セイノースーパーエクスプレス</option>
-    <option value="okaken">岡山県貨物運送</option>
-    <option value="kurumeunsou">久留米運送</option>
-  </select>
-
-  <div class="badge">
-    <div class="dot" id="dot"></div>
-    <div class="badge-name" id="bname"></div>
-    <div class="badge-hint" id="bhint"></div>
+<!-- ══ ヘッダー ══ -->
+<div class="header">
+  <div class="header-icon">📦</div>
+  <div class="header-title">
+    <h1>発注・配送メモ</h1>
+    <small>Order &amp; Delivery Tracker</small>
   </div>
+  <div class="header-right">
+    <div class="header-count" id="headerCount">0 件</div>
 
-  <label>追跡番号</label>
-  <div class="input-row">
-    <input type="text" id="no" placeholder="追跡番号を入力" maxlength="40" />
-    <button class="btn" id="btn" onclick="doTrack()">追跡する</button>
-  </div>
-
-  <div class="result" id="result">
-    <div class="rlabel" id="rlabel"></div>
-    <div class="rno" id="rno"></div>
-    <a class="rlink" id="rlink" href="#" target="_blank">追跡結果を見る →</a>
-    <div class="rnote">※ 新しいタブで追跡ページが開きます</div>
+    <!-- 名前：表示モード -->
+    <div class="user-display" id="userDisplay" onclick="startEditName()" title="クリックして名前を編集">
+      <span id="userNameText">名前未設定</span>
+      <span class="edit-icon">✎</span>
+    </div>
+    <!-- 名前：編集モード -->
+    <div class="user-edit-wrap" id="userEditWrap">
+      <input class="user-input" id="userNameInput" type="text" placeholder="あなたの名前"
+             onkeydown="if(event.key==='Enter')saveUserName()">
+      <button class="btn-sm" onclick="saveUserName()">保存</button>
+      <button class="btn-sm-ghost" onclick="cancelEditName()">✕</button>
+    </div>
   </div>
 </div>
 
+<!-- ══ 入力フォーム + メーカー管理 ══ -->
+<div class="main-grid">
+
+  <!-- 左：新規登録フォーム（トグル・デフォルト開き） -->
+  <div class="panel">
+    <button class="maker-toggle-btn open" id="formToggleBtn" onclick="toggleFormPanel()">
+      <span class="maker-toggle-chevron">▼</span>
+      新規登録
+    </button>
+    <div class="maker-body open" id="formBody">
+      <div class="input-grid" style="margin-top:14px;">
+        <div class="field">
+          <label>発注日</label>
+          <input type="date" id="f_orderDate">
+        </div>
+        <div class="field">
+          <label>発注メーカー</label>
+          <select id="f_maker"></select>
+        </div>
+        <div class="field" style="grid-column: span 2; display: grid; grid-template-columns: 1fr 80px; gap: 8px; align-items: end;">
+          <div class="field" style="gap:4px;">
+            <label>商品名 <span style="color:var(--red);font-size:9px;font-weight:400;">必須</span></label>
+            <input type="text" id="f_itemName" placeholder="商品名を入力">
+          </div>
+          <div class="field" style="gap:4px;">
+            <label>数量</label>
+            <input type="number" id="f_qty" placeholder="1" min="1" style="text-align:center;">
+          </div>
+        </div>
+        <div class="field" style="grid-column: span 2;">
+          <label>備考</label>
+          <input type="text" id="f_memo" placeholder="自由メモ（任意）">
+        </div>
+        <div class="field">
+          <label>メーカー発送日</label>
+          <input type="date" id="f_arrivalDate">
+        </div>
+        <div class="field">
+          <label>送り状番号</label>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <input type="text" id="f_trackingNumber" placeholder="例：1234-5678-9012"
+                   oninput="updateFormTrackBtn()" style="flex:1;">
+            <button type="button" id="formTrackBtn"
+                    onclick="openFormTracking()"
+                    style="display:none; flex-shrink:0;"
+                    class="btn-track">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                <polyline points="15 3 21 3 21 9"/>
+                <line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+              追跡
+            </button>
+          </div>
+        </div>
+        <div class="field">
+          <label>配送会社</label>
+          <select id="f_company" onchange="updateFormTrackBtn()"></select>
+        </div>
+        <div class="field">
+          <label>ステータス</label>
+          <div class="status-group">
+            <input class="status-radio" type="radio" name="f_status" id="s1" value="未発送" checked>
+            <label class="status-label" for="s1" data-s="未発送">未発送</label>
+            <input class="status-radio" type="radio" name="f_status" id="s2" value="発送済">
+            <label class="status-label" for="s2" data-s="発送済">発送済</label>
+            <input class="status-radio" type="radio" name="f_status" id="s3" value="到着">
+            <label class="status-label" for="s3" data-s="到着">到着</label>
+          </div>
+        </div>
+      </div>
+      <div class="input-actions">
+        <button class="btn-save" onclick="saveRecord()">＋ 保存する</button>
+        <span style="font-size:11px;color:var(--text-dim);">Ctrl+Enter でも保存</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右：メーカー管理（トグル） -->
+  <div class="panel">
+    <button class="maker-toggle-btn" id="makerToggleBtn" onclick="toggleMakerPanel()">
+      <span class="maker-toggle-chevron">▼</span>
+      メーカー管理
+    </button>
+    <div class="maker-body" id="makerBody">
+      <div class="maker-list" id="makerList"></div>
+      <div class="maker-add-row">
+        <input class="maker-add-input" id="makerAddInput" type="text" placeholder="メーカー名を追加"
+               onkeydown="if(event.key==='Enter')addMaker()">
+        <button class="btn-maker-add" onclick="addMaker()">追加</button>
+      </div>
+    </div>
+
+    <!-- 配送会社管理（トグル） -->
+    <button class="maker-toggle-btn" id="carrierToggleBtn" onclick="toggleCarrierPanel()" style="margin-top:14px;">
+      <span class="maker-toggle-chevron">▼</span>
+      配送会社管理
+    </button>
+    <div class="maker-body" id="carrierBody">
+      <div class="maker-list" id="carrierList"></div>
+      <div style="margin-bottom:6px;">
+        <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;line-height:1.5;">
+          会社名と <a href="https://trackings.jp/docs/" target="_blank" style="color:var(--accent);text-decoration:none;">trackings.jp ID</a> を入力。IDなしでもGoogle検索にフォールバックします。
+        </div>
+        <div class="maker-add-row" style="flex-direction:column;gap:6px;">
+          <input class="maker-add-input" id="carrierAddName" type="text" placeholder="配送会社名（例：ヤマト運輸）"
+                 onkeydown="if(event.key==='Enter')document.getElementById('carrierAddId').focus()">
+          <div class="maker-add-row">
+            <input class="maker-add-input" id="carrierAddId" type="text" placeholder="trackings.jp ID（例：yamato）"
+                   onkeydown="if(event.key==='Enter')addCarrier()">
+            <button class="btn-maker-add" onclick="addCarrier()">追加</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- フィルタバー -->
+<div class="filter-bar">
+  <div class="search-wrap">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+    </svg>
+    <input class="search-input" type="text" id="searchInput"
+           placeholder="商品名・メーカー・送り状番号で検索…" oninput="renderTable()">
+  </div>
+  <button class="filter-btn active" onclick="setFilter('全て',this)">全て</button>
+  <button class="filter-btn" onclick="setFilter('未発送',this)">未発送</button>
+  <button class="filter-btn" onclick="setFilter('発送済',this)">発送済</button>
+  <button class="filter-btn" onclick="setFilter('到着',this)">到着</button>
+</div>
+
+<!-- テーブル -->
+<div class="table-wrap">
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>発注日</th>
+          <th>メーカー</th>
+          <th>商品名</th>
+          <th>数量</th>
+          <th>メーカー発送日</th>
+          <th>送り状番号</th>
+          <th>配送会社</th>
+          <th>状態</th>
+          <th>備考</th>
+          <th style="text-align:center;">操作</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="copy-toast" id="copyToast"></div>
+
 <script>
-const C = {
-  sagawa:       { name:'佐川急便',                      color:'#1565C0', hint:'12桁',     id:'sagawa' },
-  yamato:       { name:'ヤマト運輸',                    color:'#212121', hint:'12桁',     id:'yamato' },
-  yupack:       { name:'日本郵便',                      color:'#C62828', hint:'12〜13桁', id:'yupack' },
-  seino:        { name:'西濃運輸',                      color:'#B71C1C', hint:'11桁',     id:'seino' },
-  fukutsu:      { name:'福山通運',                      color:'#1B5E20', hint:'10桁',     id:'fukutsu' },
-  jplogistics:  { name:'JPロジスティクス',              color:'#4A148C', hint:'11桁',     id:'jplogistics' },
-  kinbutsurex:  { name:'近物レックス',                  color:'#E65100', hint:'11桁',     id:'kinbutsurex' },
-  tonami:       { name:'トナミ運輸',                    color:'#006064', hint:'10桁',     id:'tonami' },
-  daiichi:      { name:'第一貨物',                      color:'#37474F', hint:'10桁',     id:'daiichi' },
-  meitetsuunyu: { name:'名鉄運輸',                      color:'#880E4F', hint:'11桁',     id:'meitetsuunyu' },
-  sline:        { name:'エスライン',                    color:'#558B2F', hint:'10桁',     id:'sline' },
-  seino_sx:     { name:'セイノースーパーエクスプレス',  color:'#BF360C', hint:'11桁',     id:'seino_sx' },
-  okaken:       { name:'岡山県貨物運送',                color:'#4527A0', hint:'10桁',     id:'okaken' },
-  kurumeunsou:  { name:'久留米運送',                    color:'#00695C', hint:'10桁',     id:'kurumeunsou' },
+// ══════════════════════════════════════════════════════════
+// 配送会社マスタ
+// ══════════════════════════════════════════════════════════
+// id が "__direct__" のものは trackings.jp 経由でなく専用URLを使用
+const CARRIERS = {
+  "佐川急便":                   { id: "sagawa" },
+  "ヤマト運輸":                 { id: "yamato" },
+  "日本郵便":                   { id: "yupack" },
+  "西濃運輸":                   { id: "seino" },
+  "福山通運":                   { id: "fukutsu" },
+  "JPロジスティクス":           { id: "jplogistics" },
+  "近物レックス":               { id: "kinbutsurex" },
+  "トナミ運輸":                 { id: "tonami" },
+  "第一貨物":                   { id: "daiichi" },
+  "名鉄運輸":                   { id: "meitetsuunyu" },
+  "エスライン":                 { id: "sline" },
+  "セイノースーパーエクスプレス": { id: "__direct__", url: "https://inquire.trc.ssx.seino.co.jp/inq/inq_in.jsp?inq_no={num}" },
+  "岡山県貨物運送":             { id: "okaken" },
+  "久留米運送":                 { id: "kurumeunsou" },
 };
 
-function getUrl(key, no) {
-  if (key === 'seino_sx') {
-    return `https://inquire.trc.ssx.seino.co.jp/inq/inq_in.jsp?inq_no=${no}`;
+// ══════════════════════════════════════════════════════════
+// メーカーデフォルト
+// ══════════════════════════════════════════════════════════
+const DEFAULT_MAKERS = [
+  "サカタのタネ","みのる産業","サンポリ","タカショー",
+  "ハヤシ","環境技研","河島産業","コンドーテック","一色本店"
+];
+
+// ══════════════════════════════════════════════════════════
+// ストレージキー
+// ══════════════════════════════════════════════════════════
+const KEY_ORDERS   = "orderMemoData";
+const KEY_MAKERS   = "orderMemoMakers";
+const KEY_CARRIERS = "orderMemoCarriers";
+const KEY_USER     = "orderMemoUserName";
+
+function stLoad(key, fallback) {
+  try { const v = localStorage.getItem(key); return v !== null ? JSON.parse(v) : fallback; }
+  catch { return fallback; }
+}
+function stSave(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+// ══════════════════════════════════════════════════════════
+// 状態
+// ══════════════════════════════════════════════════════════
+let currentFilter = "全て";
+
+// ══════════════════════════════════════════════════════════
+// 初期化
+// ══════════════════════════════════════════════════════════
+function init() {
+  document.getElementById("f_orderDate").value = todayStr();
+
+  const uname = stLoad(KEY_USER, "");
+  document.getElementById("userNameText").textContent = uname || "名前未設定";
+
+  renderCarriers();
+  renderMakers();
+  renderTable();
+}
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// ══════════════════════════════════════════════════════════
+// ユーザー名
+// ══════════════════════════════════════════════════════════
+function startEditName() {
+  document.getElementById("userNameInput").value = stLoad(KEY_USER, "");
+  document.getElementById("userDisplay").style.display = "none";
+  document.getElementById("userEditWrap").classList.add("open");
+  document.getElementById("userNameInput").focus();
+}
+function saveUserName() {
+  const val = document.getElementById("userNameInput").value.trim();
+  stSave(KEY_USER, val);
+  document.getElementById("userNameText").textContent = val || "名前未設定";
+  document.getElementById("userDisplay").style.display = "flex";
+  document.getElementById("userEditWrap").classList.remove("open");
+}
+function cancelEditName() {
+  document.getElementById("userDisplay").style.display = "flex";
+  document.getElementById("userEditWrap").classList.remove("open");
+}
+
+// ══════════════════════════════════════════════════════════
+// メーカー管理
+// ══════════════════════════════════════════════════════════
+function getMakers() {
+  const stored = stLoad(KEY_MAKERS, null);
+  return stored !== null ? stored : [...DEFAULT_MAKERS];
+}
+
+function renderMakers() {
+  const makers = getMakers();
+  const container = document.getElementById("makerList");
+
+  if (makers.length === 0) {
+    container.innerHTML = `<div style="color:var(--text-dim);font-size:12px;padding:4px 0;">メーカーがありません</div>`;
+  } else {
+    container.innerHTML = makers.map((m, i) => `
+      <div class="maker-item">
+        <span title="${escHtml(m)}">${escHtml(m)}</span>
+        <button class="btn-maker-del" onclick="deleteMaker(${i})" title="削除">✕</button>
+      </div>`).join("");
   }
-  return `https://trackings.jp/toi/${C[key].id}/${no}`;
+
+  const sel = document.getElementById("f_maker");
+  const prev = sel.value;
+  sel.innerHTML = "";
+  makers.forEach(m => {
+    const o = document.createElement("option");
+    o.value = o.textContent = m;
+    sel.appendChild(o);
+  });
+  if (prev && makers.includes(prev)) sel.value = prev;
 }
 
-function onChange() {
-  const key = document.getElementById('carrier').value;
-  const c = C[key];
-  document.getElementById('dot').style.background = c.color;
-  document.getElementById('bname').textContent = c.name;
-  document.getElementById('bhint').textContent = '追跡番号目安：' + c.hint;
-  document.getElementById('btn').style.background = c.color;
-  document.getElementById('result').classList.remove('show');
-  document.getElementById('no').value = '';
-  document.getElementById('no').focus();
+function addMaker() {
+  const input = document.getElementById("makerAddInput");
+  const name = input.value.trim();
+  if (!name) return;
+  const makers = getMakers();
+  if (makers.includes(name)) { showToast("⚠ すでに登録されています"); return; }
+  makers.push(name);
+  stSave(KEY_MAKERS, makers);
+  input.value = "";
+  renderMakers();
+  showToast(`✔ "${name}" を追加しました`);
 }
 
-function doTrack() {
-  const key = document.getElementById('carrier').value;
-  const c = C[key];
-  const no = document.getElementById('no').value.trim().replace(/\s/g, '');
-  if (!no) { alert('追跡番号を入力してください'); return; }
-  document.getElementById('rlabel').textContent = c.name + ' の追跡番号';
-  document.getElementById('rno').textContent = no;
-  const link = document.getElementById('rlink');
-  link.href = getUrl(key, no);
-  link.style.background = c.color;
-  document.getElementById('result').classList.add('show');
+function deleteMaker(index) {
+  const makers = getMakers();
+  const name = makers.splice(index, 1)[0];
+  stSave(KEY_MAKERS, makers);
+  renderMakers();
+  showToast(`🗑 "${name}" を削除しました`);
 }
 
-document.getElementById('no').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doTrack();
+// ══════════════════════════════════════════════════════════
+// 新規登録フォーム トグル
+// ══════════════════════════════════════════════════════════
+function toggleFormPanel() {
+  const btn  = document.getElementById("formToggleBtn");
+  const body = document.getElementById("formBody");
+  const isOpen = body.classList.contains("open");
+  if (isOpen) {
+    body.classList.remove("open"); btn.classList.remove("open");
+  } else {
+    body.classList.add("open"); btn.classList.add("open");
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// メーカー管理パネル トグル
+// ══════════════════════════════════════════════════════════
+function toggleMakerPanel() {
+  const btn  = document.getElementById("makerToggleBtn");
+  const body = document.getElementById("makerBody");
+  const isOpen = body.classList.contains("open");
+  if (isOpen) {
+    body.classList.remove("open");
+    btn.classList.remove("open");
+  } else {
+    body.classList.add("open");
+    btn.classList.add("open");
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// 配送会社管理
+// ══════════════════════════════════════════════════════════
+function getCarriers() {
+  const stored = stLoad(KEY_CARRIERS, null);
+  if (stored !== null) return stored;
+  return Object.entries(CARRIERS).map(([name, v]) => ({ name, id: v.id, url: v.url || "" }));
+}
+
+function renderCarriers() {
+  const carriers = getCarriers();
+  const container = document.getElementById("carrierList");
+
+  if (carriers.length === 0) {
+    container.innerHTML = `<div style="color:var(--text-dim);font-size:12px;padding:4px 0;">配送会社がありません</div>`;
+  } else {
+    container.innerHTML = carriers.map((c, i) => `
+      <div class="maker-item">
+        <span title="${escHtml(c.name)}">${escHtml(c.name)}</span>
+        <span class="carrier-id-badge">${escHtml(c.id || "—")}</span>
+        <button class="btn-maker-del" onclick="deleteCarrier(${i})" title="削除">✕</button>
+      </div>`).join("");
+  }
+
+  const sel = document.getElementById("f_company");
+  const prev = sel.value;
+  sel.innerHTML = "";
+  // 先頭に空（未選択）オプションを追加
+  const emptyOpt = document.createElement("option");
+  emptyOpt.value = "";
+  emptyOpt.textContent = "— 未選択 —";
+  sel.appendChild(emptyOpt);
+  carriers.forEach(c => {
+    const o = document.createElement("option");
+    o.value = o.textContent = c.name;
+    sel.appendChild(o);
+  });
+  if (prev && carriers.find(c => c.name === prev)) sel.value = prev;
+  else sel.value = "";
+}
+
+function addCarrier() {
+  const nameInput = document.getElementById("carrierAddName");
+  const idInput   = document.getElementById("carrierAddId");
+  const name = nameInput.value.trim();
+  const id   = idInput.value.trim();
+  if (!name) { showToast("⚠ 会社名を入力してください"); return; }
+  const carriers = getCarriers();
+  if (carriers.find(c => c.name === name)) { showToast("⚠ すでに登録されています"); return; }
+  carriers.push({ name, id });
+  stSave(KEY_CARRIERS, carriers);
+  nameInput.value = "";
+  idInput.value = "";
+  renderCarriers();
+  showToast(`✔ "${name}" を追加しました`);
+}
+
+function deleteCarrier(index) {
+  const carriers = getCarriers();
+  const name = carriers.splice(index, 1)[0].name;
+  stSave(KEY_CARRIERS, carriers);
+  renderCarriers();
+  showToast(`🗑 "${name}" を削除しました`);
+}
+
+function toggleCarrierPanel() {
+  const btn  = document.getElementById("carrierToggleBtn");
+  const body = document.getElementById("carrierBody");
+  const isOpen = body.classList.contains("open");
+  if (isOpen) {
+    body.classList.remove("open"); btn.classList.remove("open");
+  } else {
+    body.classList.add("open"); btn.classList.add("open");
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// 発注データ 保存 / 更新
+// ══════════════════════════════════════════════════════════
+function saveRecord() {
+  const itemName = document.getElementById("f_itemName").value.trim();
+  if (!itemName) { alert("商品名を入力してください"); return; }
+
+  const fields = {
+    orderDate:      document.getElementById("f_orderDate").value,
+    maker:          document.getElementById("f_maker").value,
+    itemName,
+    qty:            document.getElementById("f_qty").value.trim() || "",
+    arrivalDate:    document.getElementById("f_arrivalDate").value,
+    trackingNumber: document.getElementById("f_trackingNumber").value.trim(),
+    company:        document.getElementById("f_company").value,
+    status:         document.querySelector('input[name="f_status"]:checked').value,
+    memo:           document.getElementById("f_memo").value.trim(),
+  };
+
+  const data = stLoad(KEY_ORDERS, []);
+
+  if (_editingId !== null) {
+    const idx = data.findIndex(r => r.id === _editingId);
+    if (idx !== -1) Object.assign(data[idx], fields);
+    stSave(KEY_ORDERS, data);
+    showToast("✎ 更新しました");
+    clearEditMode();
+  } else {
+    data.push({ id: Date.now(), ...fields });
+    stSave(KEY_ORDERS, data);
+    showToast("✔ 保存しました");
+  }
+
+  document.getElementById("f_itemName").value = "";
+  document.getElementById("f_qty").value = "";
+  document.getElementById("f_trackingNumber").value = "";
+  document.getElementById("f_memo").value = "";
+  document.getElementById("f_arrivalDate").value = "";
+  document.querySelector('input[name="f_status"][value="未発送"]').checked = true;
+
+  renderTable();
+}
+
+// ══════════════════════════════════════════════════════════
+// ステータス変更（未発送 → 発送済 → 到着 → 未発送）
+// ══════════════════════════════════════════════════════════
+function cycleStatus(id) {
+  const order = ["未発送", "発送済", "到着"];
+  const data = stLoad(KEY_ORDERS, []);
+  const rec = data.find(r => r.id === id);
+  if (!rec) return;
+  const idx = order.indexOf(rec.status);
+  rec.status = order[(idx + 1) % order.length];
+  stSave(KEY_ORDERS, data);
+  showToast(`✔ ステータスを「${rec.status}」に変更しました`);
+  renderTable();
+}
+
+// ══════════════════════════════════════════════════════════
+// 発注データ 削除
+// ══════════════════════════════════════════════════════════
+function deleteRecord(id) {
+  const row = document.querySelector(`tr[data-id="${id}"]`);
+  if (!row) return;
+  row.classList.add("fadeout");
+  setTimeout(() => {
+    const data = stLoad(KEY_ORDERS, []).filter(r => r.id !== id);
+    stSave(KEY_ORDERS, data);
+    renderTable();
+  }, 300);
+}
+
+// ══════════════════════════════════════════════════════════
+// フィルタ
+// ══════════════════════════════════════════════════════════
+function setFilter(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll(".filter-btn").forEach(b => b.className = "filter-btn");
+  if (filter === "発送済") btn.classList.add("active-orange");
+  else if (filter === "到着") btn.classList.add("active-green");
+  else btn.classList.add("active");
+  renderTable();
+}
+
+// ══════════════════════════════════════════════════════════
+// 追跡URL生成（trackings.jp 経由）
+// ══════════════════════════════════════════════════════════
+function getTrackingURL(company, num) {
+  if (!num) return null;
+  const carriers = getCarriers();
+  const entry = carriers.find(c => c.name === company);
+  if (entry) {
+    // 専用URL指定がある場合（セイノーSXなど）
+    if (entry.id === "__direct__" && entry.url) {
+      return entry.url.replace("{num}", encodeURIComponent(num));
+    }
+    if (entry.id) {
+      return `https://trackings.jp/toi/${entry.id}/${encodeURIComponent(num)}`;
+    }
+  }
+  return `https://www.google.com/search?q=${encodeURIComponent(company + " " + num + " 荷物追跡")}`;
+}
+
+
+// ══════════════════════════════════════════════════════════
+// フォーム側追跡ボタン制御
+// 送り状番号が入力されたらボタンを表示、空なら非表示
+// ══════════════════════════════════════════════════════════
+function updateFormTrackBtn() {
+  const num = document.getElementById("f_trackingNumber").value.trim();
+  const btn = document.getElementById("formTrackBtn");
+  btn.style.display = num ? "inline-flex" : "none";
+}
+
+function openFormTracking() {
+  const num     = document.getElementById("f_trackingNumber").value.trim();
+  const company = document.getElementById("f_company").value;
+  if (!num) return;
+  const url = getTrackingURL(company, num);
+  if (url) window.open(url, "_blank");
+}
+
+
+function renderTable() {
+  const rawData = stLoad(KEY_ORDERS, []);
+  const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
+
+  const sorted = [...rawData].sort((a, b) => {
+    const aA = a.status === "到着" ? 1 : 0;
+    const bA = b.status === "到着" ? 1 : 0;
+    if (aA !== bA) return aA - bA;
+    return (b.orderDate || "").localeCompare(a.orderDate || "");
+  });
+
+  const filtered = sorted.filter(r => {
+    if (currentFilter !== "全て" && r.status !== currentFilter) return false;
+    if (keyword) {
+      const h = ((r.itemName||"")+(r.maker||"")+(r.trackingNumber||"")+(r.company||"")).toLowerCase();
+      if (!h.includes(keyword)) return false;
+    }
+    return true;
+  });
+
+  const tbody = document.getElementById("tableBody");
+  document.getElementById("headerCount").textContent = `${rawData.length} 件`;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10">
+      <div class="empty-state">
+        <div class="icon">📋</div>
+        <p>${rawData.length === 0 ? "まだデータがありません。最初の発注を登録しましょう！" : "該当するデータが見つかりません"}</p>
+      </div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(r => {
+
+    // 送り状番号セル（インライン編集可能）
+    const trackCell = `
+      <div class="memo-cell">
+        <span class="tracking-text ${r.trackingNumber ? 'tracking-num' : 'tracking-empty'}"
+              title="${r.trackingNumber ? '右クリックでコピー / クリックで編集' : 'クリックして入力'}"
+              onclick="startTrackingEdit(this, ${r.id})"
+              oncontextmenu="${r.trackingNumber ? `copyTracking(event,'${escHtml(r.trackingNumber)}')` : ''}"
+        >${escHtml(r.trackingNumber || "—")}</span>
+        <input class="memo-input" type="text" value="${escHtml(r.trackingNumber||'')}"
+               placeholder="送り状番号を入力"
+               onblur="saveTracking(this, ${r.id})"
+               onkeydown="if(event.key==='Enter'||event.key==='Escape')this.blur()">
+      </div>`;
+
+    // 追跡ボタン
+    const trackBtn = r.trackingNumber
+      ? `<button class="btn-track"
+             onclick="openTracking('${escHtml(r.company)}','${escHtml(r.trackingNumber)}')"
+             title="${escHtml(r.company)}の追跡ページを開く（送り状番号入力済）">
+           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+             <polyline points="15 3 21 3 21 9"/>
+             <line x1="10" y1="14" x2="21" y2="3"/>
+           </svg>
+           追跡
+         </button>`
+      : ``;
+
+    // ── メーカー発送日セル ──
+    const shippedDate = r.arrivalDate || "";
+    const arrCell = shippedDate
+      ? `<span class="td-arrival">${shippedDate}</span>`
+      : `<span class="td-arrival undecided">未定</span>`;
+
+    // ── 発送から2日経過チェック（到着済みは除外） ──
+    let isOverdue = false;
+    if (shippedDate && r.status !== "到着") {
+      const shipped = new Date(shippedDate);
+      const today   = new Date(todayStr());
+      const diffDays = Math.floor((today - shipped) / 86400000);
+      if (diffDays >= 2) isOverdue = true;
+    }
+    const warnBadge = isOverdue
+      ? `<span class="warn-badge">⚠ ${Math.floor((new Date(todayStr()) - new Date(shippedDate)) / 86400000)}日経過</span>`
+      : "";
+
+    // ── 行クラス ──
+    const rowClass = r.status === "到着" ? "arrived-row" : (isOverdue ? "warning-row" : "");
+
+    return `
+      <tr data-id="${r.id}" class="${rowClass}" style="cursor:pointer;"
+          onclick="loadRecordToForm(${r.id}, event)">
+        <td class="td-date">${r.orderDate || "—"}</td>
+        <td class="td-maker" title="${escHtml(r.maker||'')}">${escHtml(r.maker || "—")}</td>
+        <td class="td-item" title="${escHtml(r.itemName)}">${escHtml(r.itemName)}${warnBadge}</td>
+        <td style="font-size:13px;text-align:center;color:var(--text);">${r.qty ? escHtml(r.qty) : '<span style="color:var(--text-dim)">—</span>'}</td>
+        <td>${arrCell}</td>
+        <td onclick="event.stopPropagation()">${trackCell}</td>
+        <td class="td-carrier" title="${escHtml(r.company)}">${r.company ? escHtml(r.company) : '<span style="color:var(--text-dim)">—</span>'}</td>
+        <td><span class="badge badge-${r.status}">${r.status}</span></td>
+        <td class="memo-cell" onclick="event.stopPropagation()">
+          <span class="memo-text" title="${escHtml(r.memo||'')}"
+                onclick="startMemoEdit(this, ${r.id})">${escHtml(r.memo || "")}</span>
+          <input class="memo-input" type="text" value="${escHtml(r.memo||'')}"
+                 onblur="saveMemo(this, ${r.id})"
+                 onkeydown="if(event.key==='Enter'||event.key==='Escape')this.blur()">
+        </td>
+        <td class="ops-cell" onclick="event.stopPropagation()">
+          <div class="ops-inner">
+            ${trackBtn}
+            <button class="btn-status" onclick="cycleStatus(${r.id})" title="ステータスを変更">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.96"/>
+              </svg>
+              状態
+            </button>
+            <button class="btn-del" onclick="deleteRecord(${r.id})">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+              </svg>
+              削除
+            </button>
+          </div>
+        </td>
+      </tr>`;
+  }).join("");
+}
+
+// ══════════════════════════════════════════════════════════
+// 送り状番号インライン編集
+// ══════════════════════════════════════════════════════════
+function startTrackingEdit(el, id) {
+  const cell = el.closest(".memo-cell");
+  const input = cell.querySelector(".memo-input");
+  el.style.display = "none";
+  input.classList.add("active");
+  input.focus();
+  input.select();
+}
+
+function saveTracking(inputEl, id) {
+  const newVal = inputEl.value.trim();
+  const data = stLoad(KEY_ORDERS, []);
+  const rec = data.find(r => r.id === id);
+  if (rec) {
+    rec.trackingNumber = newVal;
+    stSave(KEY_ORDERS, data);
+  }
+  inputEl.classList.remove("active");
+  const textEl = inputEl.previousElementSibling;
+  textEl.style.display = "";
+  textEl.textContent = newVal || "—";
+  textEl.className = `tracking-text ${newVal ? 'tracking-num' : 'tracking-empty'}`;
+  renderTable();
+}
+
+// ══════════════════════════════════════════════════════════
+// 行クリック → フォームに読み込み（編集モード）
+// ══════════════════════════════════════════════════════════
+let _editingId = null;
+
+function loadRecordToForm(id, e) {
+  if (e.target.closest("button,input,select,a,.memo-cell")) return;
+
+  const data = stLoad(KEY_ORDERS, []);
+  const rec = data.find(r => r.id === id);
+  if (!rec) return;
+
+  _editingId = id;
+
+  const body = document.getElementById("formBody");
+  const btn  = document.getElementById("formToggleBtn");
+  body.classList.add("open");
+  btn.classList.add("open");
+
+  document.getElementById("f_orderDate").value      = rec.orderDate || "";
+  document.getElementById("f_itemName").value        = rec.itemName || "";
+  document.getElementById("f_qty").value             = rec.qty || "";
+  document.getElementById("f_arrivalDate").value     = rec.arrivalDate || "";
+  document.getElementById("f_trackingNumber").value  = rec.trackingNumber || "";
+  document.getElementById("f_memo").value            = rec.memo || "";
+
+  const makerSel = document.getElementById("f_maker");
+  if ([...makerSel.options].some(o => o.value === rec.maker)) makerSel.value = rec.maker;
+
+  const companySel = document.getElementById("f_company");
+  if (rec.company && [...companySel.options].some(o => o.value === rec.company)) companySel.value = rec.company;
+  else companySel.value = "";
+
+  const radio = document.querySelector(`input[name="f_status"][value="${rec.status}"]`);
+  if (radio) radio.checked = true;
+
+  const saveBtn = document.querySelector(".btn-save");
+  saveBtn.textContent = "✎ 更新する";
+  saveBtn.style.background = "linear-gradient(135deg, #4a7c59, #2d5a3d)";
+
+  document.querySelectorAll("tr.editing-row").forEach(r => r.classList.remove("editing-row"));
+  document.querySelector(`tr[data-id="${id}"]`)?.classList.add("editing-row");
+
+  document.getElementById("formBody").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  updateFormTrackBtn();
+}
+
+function clearEditMode() {
+  _editingId = null;
+  const saveBtn = document.querySelector(".btn-save");
+  saveBtn.textContent = "＋ 保存する";
+  saveBtn.style.background = "";
+  document.querySelectorAll("tr.editing-row").forEach(r => r.classList.remove("editing-row"));
+}
+
+// ══════════════════════════════════════════════════════════
+// 追跡ページを開く
+// ══════════════════════════════════════════════════════════
+function openTracking(company, num) {
+  const url = getTrackingURL(company, num);
+  if (url) window.open(url, "_blank");
+}
+
+// ══════════════════════════════════════════════════════════
+// 右クリックで送り状番号コピー
+// ══════════════════════════════════════════════════════════
+function copyTracking(e, num) {
+  e.preventDefault();
+  navigator.clipboard.writeText(num).then(() => showToast("📋 送り状番号をコピーしました"));
+}
+
+// ══════════════════════════════════════════════════════════
+// トースト通知
+// ══════════════════════════════════════════════════════════
+let _toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById("copyToast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove("show"), 2300);
+}
+
+// ══════════════════════════════════════════════════════════
+// HTMLエスケープ
+// ══════════════════════════════════════════════════════════
+function escHtml(str) {
+  return String(str ?? "")
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;")
+    .replace(/'/g,"&#39;");
+}
+
+// ══════════════════════════════════════════════════════════
+// 備考インライン編集
+// ══════════════════════════════════════════════════════════
+function startMemoEdit(el, id) {
+  const cell = el.closest(".memo-cell");
+  const input = cell.querySelector(".memo-input");
+  el.style.display = "none";
+  input.classList.add("active");
+  input.focus();
+  input.select();
+}
+
+function saveMemo(inputEl, id) {
+  const newVal = inputEl.value.trim();
+  const data = stLoad(KEY_ORDERS, []);
+  const rec = data.find(r => r.id === id);
+  if (rec) {
+    rec.memo = newVal;
+    stSave(KEY_ORDERS, data);
+  }
+  inputEl.classList.remove("active");
+  const textEl = inputEl.previousElementSibling;
+  textEl.style.display = "";
+  textEl.textContent = newVal;
+  textEl.title = newVal;
+}
+
+// Ctrl+Enter で保存
+document.addEventListener("keydown", e => {
+  if (e.ctrlKey && e.key === "Enter") saveRecord();
 });
 
-onChange();
+init();
 </script>
 </body>
 </html>
